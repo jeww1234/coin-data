@@ -68,6 +68,7 @@ if code and date:
         st.title(f"📈 {stock_name} ({code}) 주가 그래프")
         st.altair_chart(chart, use_container_width=True)
     with tab2:
+        st.title(f"📈 {stock_name} ({code}) 주가 데이터")
         st.dataframe(df.sort_index(ascending=False))
         with st.expander('컬럼 설명'):
             st.markdown('''  
