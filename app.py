@@ -13,23 +13,42 @@ with st.sidebar:
     end_date = st.date_input("조회 종료 날짜", datetime.datetime.today())
     #text_input 사용자에게 텍스트를 입력하도록 하는 입력필드 value="" : 기본값이 빈 문자열이다
     #placeholder : 입력 필드 안에 흐릿하게 보이는 안내 문구
-    code = st.text_input('종목코드', value='', placeholder='종목코드를 입력해 주세요')
+    code = st.text_input('주식 코드', value='', placeholder='주식 코드를 입력해 주세요')
+    name_list = fdr.StockListing('KRX')  # 한국 주식시장 목록 가져오기
+    if code:
+        name = name_list[name_list['Code'] == code]['Name'].values
+        # name_list['Code'] == code → name_list 데이터프레임에서 'Code' 값이 code와 같은 행을 찾음.
+        # name_list[name_list['Code'] == code] → 위 조건에 맞는 행만 남김.
+        # ['Name'] → 찾은 행에서 'Name' 열만 선택
+        # .values → 판다스의 Series 형태가 아니라 NumPy 배열로 변환.
+
+        if len(name) > 0:
+            stock_name = name[0]
+            print(name[0])
+        else:
+            stock_name = "알 수 없는 종목"
+    
     #markdown 파이선에서 html문법을 제한적으로 사용할 수 있게 해줌
     st.markdown('<h1 style="color: blue;">🔗Finance GitHub</h1>',unsafe_allow_html=True)
     st.markdown("[📂깃허브 링크](https://github.com/FinanceData/FinanceDataReader)", unsafe_allow_html=True)
+    
+    print(name_list)
+
 
 
 
 
 if code and date:
     df = fdr.DataReader(code, date, end_date)
-    df = df.reset_index()
+    df = df.reset_index(drop=False)
+    print(df.columns)
     df['단순이동평균(30일)'] = df['Close'].rolling(window=5).mean()
     data = df[['Close', '단순이동평균(30일)']].sort_index(ascending=True)
 
     tab1, tab2 = st.tabs(['차트', '데이터'])
     #id_vars : 변환 과정에서 유지할 열 / value_vars : 변환될 열을 지정(None이면 모든 열을 변환)
     #var_name : 새로 생길 열의 이름 / value_name : 값을 담을 새로운 열의 이름
+    print(df.columns)
     df_melted = df.melt(id_vars=['Date'], value_vars=['Close', '단순이동평균(30일)'],var_name='지표', value_name='값')
     #alt.Chart : 데이터를 기반으로 alt 차트 생성
     #mark_line : 막대그래프
@@ -46,6 +65,7 @@ if code and date:
     
 
     with tab1:
+        st.title(f"📈 {stock_name} ({code}) 주가 그래프")
         st.altair_chart(chart, use_container_width=True)
     with tab2:
         st.dataframe(df.sort_index(ascending=False))
@@ -55,7 +75,7 @@ if code and date:
             - Hight : 고가
             - Low : 저가
             - Close : 종가
-            - Adj Close : 수정종가
+            - Adj Close : 수정종가s
             - Volumn : 거래량
         ''')
     
